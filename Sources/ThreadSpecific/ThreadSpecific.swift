@@ -1,0 +1,3 @@
+@propertyWrapper
+struct ThreadSpecific {
+}
