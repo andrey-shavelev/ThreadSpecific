@@ -2,14 +2,19 @@ import XCTest
 @testable import ThreadSpecific
 
 final class ThreadSpecificTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(ThreadSpecific().text, "Hello, World!")
+    func testGetsThreadSpecificDefaultValueFromASingleThread() {
+        let termometer = Termometer()
+        XCTAssertEqual(0, termometer.degrees)
     }
+    
+    func testSetsAndGetsANewValueForThreadSpecificPropertyFromASingleThread() {
+        let termometer = Termometer()
+        termometer.degrees = 17
+        XCTAssertEqual(17, termometer.degrees)
+    }
+}
 
-    static var allTests = [
-        ("testExample", testExample),
-    ]
+public class Termometer {
+    @ThreadSpecific
+    var degrees: Int = 0
 }
