@@ -6,22 +6,37 @@ public class ThreadSpecific<T> {
     var allocatedStorages = [Storage<T>]()
     let valueClosure : () -> T
     var key = pthread_key_t()
-    let storageLock = NSLock()
+    var storageLock = pthread_rwlock_t()
     
     public init(wrappedValue: @autoclosure @escaping () -> T) {
         self.valueClosure = wrappedValue
         pthread_key_create(&key) {
             $0.deallocate()
         }
+        pthread_rwlock_init(&storageLock, nil)
     }
     
     deinit {
         pthread_key_delete(key)
+        pthread_rwlock_destroy(&storageLock)
+        
+        for storage in allocatedStorages {
+            storage.erase()
+        }
     }
     
     public var wrappedValue: T {
-        get { return threadSpecificStorage.getValue() }
-        set (value) { threadSpecificStorage.setValue(value: value)}
+        get { return try! threadSpecificStorage.getValue() }
+        set (value) { threadSpecificStorage.set(value: value)}
+    }
+    
+    public func erase() {
+        if (pthread_getspecific(key) == nil) {
+            return
+        }
+        
+        threadSpecificStorage.erase()
+        pthread_setspecific(key, nil)      
     }
     
     private var threadSpecificStorage: Storage<T> {
@@ -44,10 +59,11 @@ public class ThreadSpecific<T> {
     func allocateStorage() -> Storage<T> {
         let defaultValue = valueClosure()
         
-        storageLock.lock()
+        pthread_rwlock_wrlock(&storageLock)
+        defer { pthread_rwlock_unlock(&storageLock) }
+
         let newStorage = Storage<T>(value: defaultValue)
         allocatedStorages.append(newStorage)
-        storageLock.unlock()
         
         return newStorage
     }

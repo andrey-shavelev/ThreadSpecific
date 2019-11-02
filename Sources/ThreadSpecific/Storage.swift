@@ -4,15 +4,23 @@
 //
 
 class Storage<T> {
-    private var value: T
+    private var value: T?
     
     init(value: T) {
         self.value = value
     }
     
-    func setValue(value: T){
-        self.value = value
+    func erase(){
+        self.value = nil
     }
     
-    func getValue() -> T { value }
+    func getValue() throws -> T {
+        guard let value = value else {
+            throw ThreadSpecificStorageError.storageErased
+        }
+        
+        return value
+    }
+    
+    func set(value: T) { self.value = value }
 }
