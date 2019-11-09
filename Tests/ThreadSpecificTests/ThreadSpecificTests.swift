@@ -52,8 +52,6 @@ final class ThreadSpecificTests: XCTestCase {
         valueOwner.eraseValue()
         XCTAssertNil(weakReferenceToValue)
     }
-    
-    
 }
 
 public class Termometer {
