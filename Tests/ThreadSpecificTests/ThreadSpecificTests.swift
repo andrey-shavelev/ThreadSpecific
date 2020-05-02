@@ -52,6 +52,27 @@ final class ThreadSpecificTests: XCTestCase {
         valueOwner.eraseValue()
         XCTAssertNil(weakReferenceToValue)
     }
+    
+    func testEachThreadHasItsOwnThreadSpecificValue() {
+        let termometer = Termometer()
+        termometer.degrees = 42
+        var initialBackgroundDegrees: Int? = nil
+        var backgroundDegrees = 0
+        let semaphore = DispatchSemaphore(value: 0)
+        
+        DispatchQueue.global(qos: .background).async {
+            initialBackgroundDegrees = termometer.degrees
+            termometer.degrees = 41
+            backgroundDegrees = termometer.degrees
+            semaphore.signal()
+        }
+        
+        _ = semaphore.wait(timeout: DispatchTime.distantFuture)
+        
+        XCTAssertEqual(0, initialBackgroundDegrees)
+        XCTAssertEqual(42, termometer.degrees)
+        XCTAssertEqual(41, backgroundDegrees)
+    }
 }
 
 public class Termometer {
